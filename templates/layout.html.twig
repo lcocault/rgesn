@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Conformité RGESN{% endblock %}</title>
+    <link rel="stylesheet" href="{{ path('/assets/css/style.css') }}">
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="{{ path('/projects') }}">Conformité RGESN</a>
+        <nav>
+            <a href="{{ path('/projects') }}">Projets</a>
+            {% if auth_required() and is_authenticated() %}
+                <form class="inline" method="post" action="{{ path('/logout') }}">
+                    <button class="btn small secondary" type="submit" style="color:#e7efe9;border-color:#3f5c4b;">Déconnexion</button>
+                </form>
+            {% endif %}
+        </nav>
+    </header>
+    <main class="container">
+        {% for flash in flashes() %}
+            <div class="flashes">
+                <div class="flash {{ flash.type }}">{{ flash.message }}</div>
+            </div>
+        {% endfor %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

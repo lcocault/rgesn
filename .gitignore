@@ -1,0 +1,5 @@
+/vendor/
+/.env
+/storage/pdf/*.pdf
+.DS_Store
+*.log

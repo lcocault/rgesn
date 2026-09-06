@@ -1,0 +1,152 @@
+{% extends 'layout.html.twig' %}
+{% block title %}{{ evaluation.label }} — {{ project.name }}{% endblock %}
+{% block content %}
+<p><a class="small" href="{{ path('/projects/' ~ project.id) }}">&larr; {{ project.name }}</a></p>
+<h1>{{ evaluation.label }}</h1>
+
+<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <div>
+            <div class="score-ring">{{ scoring.score }} %</div>
+            <div class="muted small">Score d'avancement RGESN</div>
+            {% if previous_evaluation %}
+                <div class="muted small">Précédent : {{ previous_evaluation.score|number_format(1) }} % ({{ previous_evaluation.completed_at|date("d/m/Y") }})</div>
+            {% endif %}
+        </div>
+        <div class="small">
+            <div><span class="badge valide">{{ scoring.validated|length }}</span> validés</div>
+            <div><span class="badge non_valide">{{ scoring.non_validated|length }}</span> non validés</div>
+            <div><span class="badge non_applicable">{{ scoring.not_applicable|length }}</span> non applicables</div>
+            <div><span class="badge non_renseigne">{{ scoring.unanswered|length }}</span> restants</div>
+        </div>
+        <div>
+            {% if evaluation.status == 'completed' %}
+                <span class="badge valide">Finalisée</span>
+                <form class="inline" method="post" action="{{ path('/evaluations/' ~ evaluation.id ~ '/reopen') }}">
+                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                    <button class="btn small secondary" type="submit">Réouvrir</button>
+                </form>
+            {% else %}
+                <form class="inline" method="post" action="{{ path('/evaluations/' ~ evaluation.id ~ '/complete') }}">
+                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                    <button class="btn small" type="submit" {% if scoring.unanswered|length > 0 %}disabled title="Il reste des critères sans réponse"{% endif %}>Finaliser l'évaluation</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    {% set total_decided = scoring.validated|length + scoring.non_validated|length + scoring.not_applicable|length %}
+    {% set total = total_decided + scoring.unanswered|length %}
+    <div class="progress-bar"><div style="width: {{ total > 0 ? (total_decided / total * 100) : 0 }}%;"></div></div>
+    <div class="small muted">{{ total_decided }} / {{ total }} critères statués</div>
+</div>
+
+{% if not gating_complete %}
+    <div class="card">
+        <h2>1. Questions de cadrage</h2>
+        <p class="muted">Répondez d'abord à quelques questions sur le service pour écarter automatiquement les critères non pertinents.</p>
+        <a class="btn" href="{{ path('/evaluations/' ~ evaluation.id ~ '/gating') }}">Répondre aux questions de cadrage</a>
+    </div>
+{% else %}
+    <div class="card">
+        <h2>Cadrage du service</h2>
+        <p class="muted small">{{ gating_questions|length }} caractéristiques renseignées.</p>
+        <a class="btn secondary small" href="{{ path('/evaluations/' ~ evaluation.id ~ '/gating') }}">Modifier les réponses de cadrage</a>
+    </div>
+
+    {% if remaining|length > 0 %}
+        <div class="card">
+            <a class="btn" href="{{ path('/evaluations/' ~ evaluation.id ~ '/criteria/' ~ remaining[0].criterion.code) }}">
+                Continuer le questionnaire ({{ remaining|length }} critère{{ remaining|length > 1 ? 's' : '' }} restant{{ remaining|length > 1 ? 's' : '' }})
+            </a>
+        </div>
+    {% endif %}
+
+    {% for theme_code, rows in grouped_rows %}
+        <div class="card theme-block">
+            <div class="theme-title"><h3>{{ theme_code }}. {{ rows[0].criterion.theme_label }}</h3></div>
+            <table>
+                <tbody>
+                {% for row in rows %}
+                    <tr class="criterion-row">
+                        <td class="small muted" style="width:3.5rem;">{{ row.criterion.code }}</td>
+                        <td class="q">{{ row.criterion.question }}
+                            <div><span class="badge {{ row.criterion.priority }} small">{{ row.criterion.priority }}</span></div>
+                        </td>
+                        <td style="width:9rem;">
+                            <span class="badge {{ row.status }}">
+                                {% if row.status == 'valide' %}Validé
+                                {% elseif row.status == 'non_valide' %}Non validé
+                                {% elseif row.status == 'non_applicable' %}Non applicable
+                                {% else %}À répondre{% endif %}
+                            </span>
+                            {% if row.auto_na %}<div class="muted small">(cadrage)</div>{% endif %}
+                        </td>
+                        <td style="width:6rem;">
+                            {% if not row.auto_na %}
+                                <a class="btn small secondary" href="{{ path('/evaluations/' ~ evaluation.id ~ '/criteria/' ~ row.criterion.code) }}">
+                                    {{ row.answer ? 'Modifier' : 'Répondre' }}
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="card">
+    <h2>Informations générales de la déclaration</h2>
+    <form method="post" action="{{ path('/evaluations/' ~ evaluation.id ~ '/meta') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <label for="label">Nom de l'évaluation</label>
+        <input type="text" id="label" name="label" value="{{ evaluation.label }}">
+        {% set meta = evaluation.meta|json_decode %}
+        <label for="date_realisation">Date de réalisation du diagnostic</label>
+        <input type="date" id="date_realisation" name="date_realisation" value="{{ meta.date_realisation|default('') }}">
+        <label for="perimetre_diagnostic">Chemins critiques et unités fonctionnelles évalués</label>
+        <textarea id="perimetre_diagnostic" name="perimetre_diagnostic" rows="3">{{ meta.perimetre_diagnostic|default('') }}</textarea>
+        <label for="plan_avancement">Plan d'avancement (pistes d'actions prioritaires envisagées)</label>
+        <textarea id="plan_avancement" name="plan_avancement" rows="3">{{ meta.plan_avancement|default('') }}</textarea>
+        <label for="frequence_revues">Fréquence des revues et audits</label>
+        <input type="text" id="frequence_revues" name="frequence_revues" value="{{ meta.frequence_revues|default('') }}">
+        <label for="score_vise">Score d'avancement visé</label>
+        <input type="text" id="score_vise" name="score_vise" value="{{ meta.score_vise|default('') }}" placeholder="ex : 80 %">
+        <label for="score_vise_date">Échéance visée</label>
+        <input type="date" id="score_vise_date" name="score_vise_date" value="{{ meta.score_vise_date|default('') }}">
+        <p style="margin-top:1rem;"><button class="btn secondary" type="submit">Enregistrer</button></p>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Déclaration de conformité</h2>
+    <p class="muted small">Génère un document de conformité à partir des réponses actuelles, à publier ou archiver.</p>
+    <div style="display:flex;gap:0.6rem;">
+        <a class="btn secondary" href="{{ path('/evaluations/' ~ evaluation.id ~ '/declaration/preview') }}" target="_blank">Aperçu</a>
+        <form method="post" action="{{ path('/evaluations/' ~ evaluation.id ~ '/declaration') }}">
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
+            <button class="btn" type="submit">Générer et archiver la déclaration</button>
+        </form>
+    </div>
+
+    {% if declarations|length > 0 %}
+        <table style="margin-top:1rem;">
+            <thead><tr><th>Déclaration archivée</th><th></th></tr></thead>
+            <tbody>
+            {% for declaration in declarations %}
+                <tr>
+                    <td>{{ declaration.generated_at|date("d/m/Y à H:i") }}</td>
+                    <td><a class="btn small secondary" href="{{ path('/declarations/' ~ declaration.id) }}">Consulter</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+
+<form method="post" action="{{ path('/evaluations/' ~ evaluation.id ~ '/delete') }}" onsubmit="return confirm('Supprimer définitivement cette évaluation ?');">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <button class="btn danger small" type="submit">Supprimer cette évaluation</button>
+</form>
+{% endblock %}

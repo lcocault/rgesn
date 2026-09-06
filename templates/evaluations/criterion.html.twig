@@ -1,0 +1,62 @@
+{% extends 'layout.html.twig' %}
+{% block title %}Critère {{ criterion.code }} — {{ project.name }}{% endblock %}
+{% block content %}
+<p><a class="small" href="{{ path('/evaluations/' ~ evaluation.id) }}">&larr; Retour à l'évaluation</a></p>
+
+<h1>
+    {{ criterion.code }}
+    <span class="badge {{ criterion.priority }}">{{ criterion.priority }}</span>
+    {% if criterion.difficulty %}<span class="badge non_renseigne">difficulté {{ criterion.difficulty }}</span>{% endif %}
+</h1>
+<h2>{{ criterion.question }}</h2>
+
+<div class="fiche-block">
+    <h4>Applicabilité</h4>
+    <p>{{ criterion.applicability_condition|default('Applicable à tous les services') }}</p>
+
+    <h4>Objectif</h4>
+    <p>{{ criterion.objectif }}</p>
+
+    <h4>Mise en œuvre</h4>
+    <p>{{ criterion.mise_en_oeuvre }}</p>
+
+    <h4>Moyen de test ou de contrôle</h4>
+    <p>{{ criterion.moyen_test }}</p>
+
+    {% if criterion.metiers %}
+        <h4>Métiers concernés</h4>
+        <p>{{ criterion.metiers }}</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <form method="post" action="{{ path('/evaluations/' ~ evaluation.id ~ '/criteria/' ~ criterion.code) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <label>Statut de ce critère pour le service évalué</label>
+        <div class="status-choice">
+            {% set current_status = answer.status|default('non_renseigne') %}
+            <label><input type="radio" name="status" value="valide" {% if current_status == 'valide' %}checked{% endif %}> Validé</label>
+            <label><input type="radio" name="status" value="non_valide" {% if current_status == 'non_valide' %}checked{% endif %}> Non validé</label>
+            <label><input type="radio" name="status" value="non_applicable" {% if current_status == 'non_applicable' %}checked{% endif %}> Non applicable</label>
+            <label><input type="radio" name="status" value="non_renseigne" {% if current_status == 'non_renseigne' %}checked{% endif %}> Je ne sais pas encore</label>
+        </div>
+
+        <label for="justification">Justification (reprise telle quelle dans la déclaration de conformité)</label>
+        <textarea id="justification" name="justification" rows="5" placeholder="Décrivez les éléments concrets justifiant ce statut...">{{ answer.justification|default('') }}</textarea>
+
+        <div class="nav-buttons">
+            <div>
+                {% if prev_code %}<a class="btn secondary small" href="{{ path('/evaluations/' ~ evaluation.id ~ '/criteria/' ~ prev_code) }}">&larr; Précédent</a>{% endif %}
+            </div>
+            <div style="display:flex;gap:0.5rem;">
+                <button class="btn secondary" type="submit">Enregistrer</button>
+                {% if next_unanswered %}
+                    <button class="btn" type="submit" name="go_to" value="{{ next_unanswered }}">Enregistrer et continuer</button>
+                {% elseif next_code %}
+                    <button class="btn" type="submit" name="go_to" value="{{ next_code }}">Enregistrer et suivant &rarr;</button>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

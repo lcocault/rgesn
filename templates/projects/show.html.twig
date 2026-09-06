@@ -1,0 +1,62 @@
+{% extends 'layout.html.twig' %}
+{% block title %}{{ project.name }}{% endblock %}
+{% block content %}
+<p><a class="small" href="{{ path('/projects') }}">&larr; Tous les projets</a></p>
+<h1>{{ project.name }}</h1>
+{% if project.description %}<p class="muted">{{ project.description }}</p>{% endif %}
+
+<div class="card">
+    <h2>Évaluations RGESN</h2>
+    <form method="post" action="{{ path('/projects/' ~ project.id ~ '/evaluations') }}" style="margin-bottom:1rem;">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <label for="label">Nom de la nouvelle évaluation</label>
+        <input type="text" id="label" name="label" placeholder="Évaluation {{ "now"|date("Y-m") }}" required>
+        <p style="margin-top:0.75rem;"><button class="btn" type="submit">Démarrer une évaluation</button></p>
+    </form>
+
+    {% if evaluations|length == 0 %}
+        <p class="muted">Aucune évaluation pour ce projet.</p>
+    {% else %}
+        <table>
+            <thead>
+                <tr><th>Évaluation</th><th>Statut</th><th>Score</th><th>Créée le</th><th></th></tr>
+            </thead>
+            <tbody>
+            {% for evaluation in evaluations %}
+                <tr>
+                    <td><a href="{{ path('/evaluations/' ~ evaluation.id) }}">{{ evaluation.label }}</a></td>
+                    <td>
+                        {% if evaluation.status == 'completed' %}
+                            <span class="badge valide">Finalisée</span>
+                        {% else %}
+                            <span class="badge non_renseigne">En cours</span>
+                        {% endif %}
+                    </td>
+                    <td>{% if evaluation.score is not null %}{{ evaluation.score|number_format(1) }} %{% else %}<span class="muted">—</span>{% endif %}</td>
+                    <td class="small muted">{{ evaluation.created_at|date("d/m/Y") }}</td>
+                    <td><a class="btn small secondary" href="{{ path('/evaluations/' ~ evaluation.id) }}">Ouvrir</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>Modifier le projet</h3>
+    <form method="post" action="{{ path('/projects/' ~ project.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <label for="name">Nom</label>
+        <input type="text" id="name" name="name" value="{{ project.name }}" required>
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="2">{{ project.description }}</textarea>
+        <p style="margin-top:0.75rem;display:flex;gap:0.6rem;">
+            <button class="btn secondary" type="submit">Enregistrer</button>
+        </p>
+    </form>
+    <form method="post" action="{{ path('/projects/' ~ project.id ~ '/delete') }}" onsubmit="return confirm('Supprimer définitivement ce projet et toutes ses évaluations ?');">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <button class="btn danger small" type="submit">Supprimer le projet</button>
+    </form>
+</div>
+{% endblock %}

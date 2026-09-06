@@ -1,0 +1,19 @@
+{
+    "name": "rgesn/conformite",
+    "description": "Outil d'évaluation de la conformité RGESN (référentiel général d'écoconception des services numériques)",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.1",
+        "twig/twig": "^3.10",
+        "dompdf/dompdf": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rgesn\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}

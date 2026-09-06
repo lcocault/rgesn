@@ -1,0 +1,9 @@
+{% extends 'layout.html.twig' %}
+{% block title %}Page introuvable{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Page introuvable</h1>
+    <p class="muted">La ressource demandée n'existe pas ou plus.</p>
+    <a class="btn" href="{{ path('/projects') }}">Retour aux projets</a>
+</div>
+{% endblock %}

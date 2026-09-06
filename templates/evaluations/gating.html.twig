@@ -1,0 +1,31 @@
+{% extends 'layout.html.twig' %}
+{% block title %}Questions de cadrage — {{ project.name }}{% endblock %}
+{% block content %}
+<p><a class="small" href="{{ path('/evaluations/' ~ evaluation.id) }}">&larr; Retour à l'évaluation</a></p>
+<h1>Questions de cadrage</h1>
+<p class="muted">
+    Ces quelques questions décrivent les caractéristiques du service numérique évalué.
+    Elles permettent d'écarter automatiquement les critères du référentiel qui ne sont pas
+    applicables à ce type de service, sans avoir à répondre à chacun d'entre eux individuellement.
+</p>
+
+<form method="post" action="{{ path('/evaluations/' ~ evaluation.id ~ '/gating') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <div class="card">
+        {% for question in gating_questions %}
+            {% set current = gating_answers[question.tag] is defined ? gating_answers[question.tag] : true %}
+            <div class="gating-row">
+                <div class="label">
+                    <strong>{{ question.label }}</strong>
+                    {% if question.help_text %}<div class="muted small">{{ question.help_text }}</div>{% endif %}
+                </div>
+                <div class="toggle">
+                    <label><input type="radio" name="gating[{{ question.tag }}]" value="oui" {% if current %}checked{% endif %}> Oui</label>
+                    <label><input type="radio" name="gating[{{ question.tag }}]" value="non" {% if not current %}checked{% endif %}> Non</label>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <button class="btn" type="submit">Enregistrer et continuer</button>
+</form>
+{% endblock %}

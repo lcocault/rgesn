@@ -1,0 +1,47 @@
+{% extends 'layout.html.twig' %}
+{% block title %}Projets{% endblock %}
+{% block content %}
+<h1>Projets</h1>
+
+<div class="card">
+    <h2>Nouveau projet</h2>
+    <form method="post" action="{{ path('/projects') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <label for="name">Nom du projet</label>
+        <input type="text" id="name" name="name" required>
+        <label for="description">Description (optionnel)</label>
+        <textarea id="description" name="description" rows="2"></textarea>
+        <p style="margin-top:1rem;"><button class="btn" type="submit">Créer le projet</button></p>
+    </form>
+</div>
+
+{% if projects|length == 0 %}
+    <p class="muted">Aucun projet pour l'instant.</p>
+{% else %}
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Projet</th>
+                    <th>Évaluations</th>
+                    <th>Dernier score</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for project in projects %}
+                <tr>
+                    <td>
+                        <a href="{{ path('/projects/' ~ project.id) }}"><strong>{{ project.name }}</strong></a>
+                        {% if project.description %}<div class="muted small">{{ project.description }}</div>{% endif %}
+                    </td>
+                    <td>{{ project.evaluations_count }}</td>
+                    <td>{% if project.last_score is not null %}{{ project.last_score|number_format(1) }} %{% else %}<span class="muted">—</span>{% endif %}</td>
+                    <td><a class="btn small secondary" href="{{ path('/projects/' ~ project.id) }}">Ouvrir</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+{% endblock %}

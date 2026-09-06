@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Déclaration d'écoconception — {{ project.name }}</title>
+<style>
+    body { font-family: "DejaVu Sans", Helvetica, Arial, sans-serif; color: #1f2621; font-size: 13px; line-height: 1.5; }
+    h1 { font-size: 20px; border-bottom: 3px solid #2f6b4f; padding-bottom: 6px; }
+    h2 { font-size: 16px; margin-top: 28px; border-bottom: 1px solid #dfe3dc; padding-bottom: 4px; }
+    h3 { font-size: 13px; margin-bottom: 2px; }
+    .muted { color: #626d63; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; }
+    td, th { padding: 4px 6px; border-bottom: 1px solid #dfe3dc; text-align: left; vertical-align: top; }
+    .badge { display: inline-block; padding: 1px 8px; border-radius: 8px; font-size: 11px; font-weight: bold; }
+    .valide { background: #e4f1e8; color: #2f6b4f; }
+    .non_valide { background: #fbe9e6; color: #b3402f; }
+    .non_applicable { background: #eceeec; color: #8a9089; }
+    .non_renseigne { background: #fbf3e2; color: #a0761f; }
+    .crit { margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #dfe3dc; }
+    .crit .question { font-weight: bold; }
+    .crit .just { margin: 4px 0 0; white-space: pre-line; }
+    .score { font-size: 32px; font-weight: bold; color: #234f3b; }
+    .header-meta td { border: none; padding: 2px 6px; }
+</style>
+</head>
+<body>
+
+<h1>Déclaration d'écoconception de {{ project.name }}</h1>
+<p class="muted">Document généré le {{ generated_at }} dans le cadre de la mise en œuvre du référentiel général de l'écoconception des services numériques (version 2024, Arcep / Arcom / ADEME).</p>
+
+<h2>Résumé</h2>
+<table class="header-meta">
+    <tr><td><strong>Service évalué</strong></td><td>{{ project.name }}</td></tr>
+    <tr><td><strong>Date de réalisation du diagnostic</strong></td><td>{{ meta.date_realisation|default('non renseignée') }}</td></tr>
+    <tr>
+        <td><strong>Score d'avancement</strong></td>
+        <td><span class="score">{{ scoring.score }} %</span>
+            {% if previous_evaluation %} (précédent : {{ previous_evaluation.score|number_format(1) }} % le {{ previous_evaluation.completed_at|date("d/m/Y") }}){% endif %}
+        </td>
+    </tr>
+    {% if meta.score_vise %}
+        <tr><td><strong>Score d'avancement visé</strong></td><td>{{ meta.score_vise }}{% if meta.score_vise_date %} d'ici le {{ meta.score_vise_date }}{% endif %}</td></tr>
+    {% endif %}
+</table>
+
+<h2>Critères validés par le service numérique</h2>
+<p>{% if scoring.validated|length > 0 %}{{ scoring.validated|join(', ') }}{% else %}<span class="muted">Aucun critère validé à ce stade.</span>{% endif %}</p>
+
+<h2>Critères non validés par le service numérique</h2>
+<p>{% if scoring.non_validated|length > 0 %}{{ scoring.non_validated|join(', ') }}{% else %}<span class="muted">Aucun.</span>{% endif %}</p>
+
+{% if scoring.not_applicable|length > 0 %}
+<h2>Critères non applicables</h2>
+<p>{{ scoring.not_applicable|join(', ') }}</p>
+{% endif %}
+
+{% if meta.perimetre_diagnostic %}
+<h2>Chemins critiques et unités fonctionnelles évalués</h2>
+<p style="white-space:pre-line;">{{ meta.perimetre_diagnostic }}</p>
+{% endif %}
+
+{% if meta.plan_avancement or meta.frequence_revues %}
+<h2>Plan d'avancement dans la démarche d'écoconception</h2>
+{% if meta.plan_avancement %}<p style="white-space:pre-line;">{{ meta.plan_avancement }}</p>{% endif %}
+{% if meta.frequence_revues %}<p class="muted">Fréquence des revues et audits : {{ meta.frequence_revues }}</p>{% endif %}
+{% endif %}
+
+<h2>Détail du diagnostic avec le référentiel général de l'écoconception</h2>
+
+{% for theme in themes %}
+    <h2>{{ theme.code }}. {{ theme.label }}</h2>
+    {% for row in theme.rows %}
+        {% if row.status != 'non_applicable' %}
+            <div class="crit">
+                <div class="question">{{ row.criterion.code }} — {{ row.criterion.question }}
+                    <span class="badge {{ row.status }}">
+                        {% if row.status == 'valide' %}Validé{% elseif row.status == 'non_valide' %}Non validé{% else %}Non renseigné{% endif %}
+                    </span>
+                </div>
+                {% if row.answer and row.answer.justification %}
+                    <p class="just">{{ row.answer.justification }}</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endfor %}
+{% endfor %}
+
+</body>
+</html>

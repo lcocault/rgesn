@@ -1,0 +1,206 @@
+[
+  {
+    "tag": "has_ui",
+    "label": "Le service dispose-t-il d'une interface utilisateur affichée à l'écran (site, appli, IHM) ?",
+    "help_text": "Répondre «Non» pour un service sans aucune interface visuelle (API pure, traitement backend, service machine-to-machine...).",
+    "criteria": [
+      "2.4",
+      "2.5",
+      "4.2",
+      "4.3",
+      "4.8",
+      "4.9",
+      "4.12",
+      "4.13",
+      "4.14",
+      "4.15",
+      "6.1",
+      "6.4",
+      "6.5"
+    ]
+  },
+  {
+    "tag": "has_forms",
+    "label": "Le service comporte-t-il des formulaires de saisie utilisateur ?",
+    "help_text": "",
+    "criteria": [
+      "4.10",
+      "4.11"
+    ]
+  },
+  {
+    "tag": "has_images",
+    "label": "Le service affiche-t-il des images matricielles (photos, illustrations bitmap) ?",
+    "help_text": "",
+    "criteria": [
+      "5.1",
+      "5.2"
+    ]
+  },
+  {
+    "tag": "has_video",
+    "label": "Le service diffuse-t-il du contenu vidéo ?",
+    "help_text": "",
+    "criteria": [
+      "5.3",
+      "5.4"
+    ]
+  },
+  {
+    "tag": "has_video_with_audio",
+    "label": "Les vidéos du service comportent-elles une piste audio ?",
+    "help_text": "",
+    "criteria": [
+      "5.5"
+    ]
+  },
+  {
+    "tag": "has_audio",
+    "label": "Le service propose-t-il du contenu audio autonome (musique, podcast, son) ?",
+    "help_text": "",
+    "criteria": [
+      "5.6"
+    ]
+  },
+  {
+    "tag": "has_documents",
+    "label": "Le service propose-t-il des documents téléchargeables (PDF, bureautique...) ?",
+    "help_text": "",
+    "criteria": [
+      "5.7"
+    ]
+  },
+  {
+    "tag": "uses_third_party_services",
+    "label": "Le service intègre-t-il des services tiers (API externes, SDK, outils de mesure d'audience...) ?",
+    "help_text": "",
+    "criteria": [
+      "2.10",
+      "4.4"
+    ]
+  },
+  {
+    "tag": "uses_external_suppliers",
+    "label": "Le projet fait-il appel à des fournisseurs ou prestataires externes pour sa conception ou son exploitation ?",
+    "help_text": "",
+    "criteria": [
+      "2.8"
+    ]
+  },
+  {
+    "tag": "uses_offtheshelf_components",
+    "label": "Le service utilise-t-il des composants d'interface prêts à l'emploi (bibliothèques de composants graphiques tierces) ?",
+    "help_text": "",
+    "criteria": [
+      "2.9"
+    ]
+  },
+  {
+    "tag": "has_connected_device",
+    "label": "Le service est-il associé à un objet connecté ou un périphérique matériel (IoT, accessoire) ?",
+    "help_text": "",
+    "criteria": [
+      "1.10"
+    ]
+  },
+  {
+    "tag": "sold_with_terminal",
+    "label": "Le service est-il commercialisé avec un terminal matériel dédié (box, objet connecté vendu avec l'accès au service) ?",
+    "help_text": "",
+    "criteria": [
+      "3.4"
+    ]
+  },
+  {
+    "tag": "has_software_updates",
+    "label": "Le service évolue-t-il via des mises à jour logicielles après sa mise en production ?",
+    "help_text": "",
+    "criteria": [
+      "3.5",
+      "3.6"
+    ]
+  },
+  {
+    "tag": "uses_internet",
+    "label": "Le service nécessite-t-il une connexion réseau Internet (HTTP/HTTPS) pour fonctionner ?",
+    "help_text": "",
+    "criteria": [
+      "3.3",
+      "6.3",
+      "6.7"
+    ]
+  },
+  {
+    "tag": "has_backend_hosting",
+    "label": "Le service repose-t-il sur des serveurs applicatifs et un hébergement (backend, base de données, centre de données) dont vous choisissez ou influencez le fournisseur ?",
+    "help_text": "Répondre «Non» pour un logiciel purement local ou un hébergement totalement hors de votre contrôle.",
+    "criteria": [
+      "3.2",
+      "3.7",
+      "6.2",
+      "7.1",
+      "7.2",
+      "8.1",
+      "8.2",
+      "8.3",
+      "8.4",
+      "8.5",
+      "8.6",
+      "8.7",
+      "8.9"
+    ]
+  },
+  {
+    "tag": "uses_blockchain",
+    "label": "Le service repose-t-il sur une blockchain ou un registre distribué à mécanisme de consensus ?",
+    "help_text": "",
+    "criteria": [
+      "7.4"
+    ]
+  },
+  {
+    "tag": "has_ml_training",
+    "label": "Le service repose-t-il sur l'entraînement d'un modèle d'apprentissage automatique (machine learning) ?",
+    "help_text": "",
+    "criteria": [
+      "9.2",
+      "9.3",
+      "9.4",
+      "9.5",
+      "9.6"
+    ]
+  },
+  {
+    "tag": "has_ml_inference",
+    "label": "Le service exécute-t-il des prédictions ou inférences à partir d'un modèle d'IA en production ?",
+    "help_text": "",
+    "criteria": [
+      "9.7"
+    ]
+  },
+  {
+    "tag": "uses_sensors",
+    "label": "Le service utilise-t-il les capteurs des terminaux (GPS, caméra, micro, accéléromètre...) ?",
+    "help_text": "",
+    "criteria": [
+      "6.6"
+    ]
+  },
+  {
+    "tag": "uses_encryption",
+    "label": "Le service a-t-il recours à des mécanismes de chiffrement ?",
+    "help_text": "",
+    "criteria": [
+      "1.7"
+    ]
+  },
+  {
+    "tag": "has_async_processing",
+    "label": "Le service exécute-t-il des traitements différés ou en arrière-plan (tâches planifiées, calculs asynchrones) ?",
+    "help_text": "",
+    "criteria": [
+      "7.3",
+      "8.10"
+    ]
+  }
+]
