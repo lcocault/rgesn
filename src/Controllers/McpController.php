@@ -31,7 +31,7 @@ final class McpController
     public function handle(): void
     {
         if (!$this->isAuthorized()) {
-            http_response_code(401);
+            $this->sendMcpError(null, -32001, 'Unauthorized', 401);
             return;
         }
 
@@ -155,9 +155,13 @@ final class McpController
     private function dispatchToolCall(array $params): array
     {
         $name = $params['name'] ?? null;
-        $arguments = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
+        $hasArguments = array_key_exists('arguments', $params);
+        $arguments = $params['arguments'] ?? [];
         if (!is_string($name) || $name === '') {
             throw new InvalidArgumentException('Missing or invalid tool name');
+        }
+        if ($hasArguments && !is_array($arguments)) {
+            throw new InvalidArgumentException('Missing or invalid tool arguments');
         }
 
         $data = match ($name) {
@@ -312,7 +316,7 @@ final class McpController
 
         $allowed = ['valide', 'non_valide', 'non_applicable', 'non_renseigne'];
         if (!in_array($status, $allowed, true)) {
-            throw new InvalidArgumentException('Invalid status');
+            throw new InvalidArgumentException('Invalid status (allowed: valide, non_valide, non_applicable, non_renseigne)');
         }
 
         $answers = $this->evaluations->answers($evaluationId);
