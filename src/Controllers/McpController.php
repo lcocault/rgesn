@@ -12,7 +12,6 @@ use Rgesn\Repositories\CriteriaRepository;
 use Rgesn\Repositories\EvaluationRepository;
 use Rgesn\Repositories\ProjectRepository;
 use Rgesn\Services\ApplicabilityService;
-use Rgesn\Support\Auth;
 
 final class McpController
 {
@@ -31,26 +30,35 @@ final class McpController
     public function handle(): void
     {
         if (!$this->isAuthorized()) {
-            $this->sendMcpError(null, -32001, 'Unauthorized', 401);
+            $this->sendMcpError(null, -32001, 'Unauthorized');
             return;
         }
 
         $payload = json_decode((string) file_get_contents('php://input'), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->sendMcpError(null, -32700, 'Invalid JSON');
+            return;
+        }
         if (!is_array($payload)) {
-            $this->sendMcpError(null, -32700, 'Invalid JSON', 400);
+            $this->sendMcpError(null, -32600, 'Invalid request');
             return;
         }
 
+        $hasId = array_key_exists('id', $payload);
         $id = $payload['id'] ?? null;
         $method = $payload['method'] ?? null;
         $params = is_array($payload['params'] ?? null) ? $payload['params'] : [];
 
         if (!is_string($method) || $method === '') {
-            $this->sendMcpError($id, -32600, 'Invalid request', 400);
+            if (!$hasId) {
+                http_response_code(204);
+                return;
+            }
+            $this->sendMcpError($id, -32600, 'Invalid request');
             return;
         }
 
-        if ($method === 'notifications/initialized' && $id === null) {
+        if (!$hasId && $method === 'notifications/initialized') {
             http_response_code(204);
             return;
         }
@@ -58,13 +66,25 @@ final class McpController
         try {
             $result = $this->dispatchMethod($method, $params);
         } catch (InvalidArgumentException $e) {
-            $this->sendMcpError($id, -32602, $e->getMessage(), 400);
+            if (!$hasId) {
+                http_response_code(204);
+                return;
+            }
+            $this->sendMcpError($id, -32602, $e->getMessage());
             return;
         } catch (\Throwable $e) {
-            $this->sendMcpError($id, -32603, 'Internal error', 500);
+            if (!$hasId) {
+                http_response_code(204);
+                return;
+            }
+            $this->sendMcpError($id, -32603, 'Internal error');
             return;
         }
 
+        if (!$hasId) {
+            http_response_code(204);
+            return;
+        }
         $this->sendMcpResult($id, $result);
     }
 
@@ -330,10 +350,6 @@ final class McpController
 
     private function isAuthorized(): bool
     {
-        if (Auth::isRequired() && Auth::isLoggedIn()) {
-            return true;
-        }
-
         $password = Config::accessPassword();
         if ($password === null || $password === '') {
             return false;
@@ -357,9 +373,8 @@ final class McpController
         ], JSON_UNESCAPED_UNICODE);
     }
 
-    private function sendMcpError(mixed $id, int $code, string $message, int $statusCode = 200): void
+    private function sendMcpError(mixed $id, int $code, string $message): void
     {
-        http_response_code($statusCode);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode([
             'jsonrpc' => '2.0',
