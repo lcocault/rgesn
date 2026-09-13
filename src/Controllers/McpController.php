@@ -303,6 +303,11 @@ final class McpController
             throw new InvalidArgumentException('Invalid status');
         }
 
+        $answers = $this->evaluations->answers($evaluationId);
+        if (isset($answers[$criteriaCode])) {
+            throw new InvalidArgumentException('Criterion already answered');
+        }
+
         $applicability = new ApplicabilityService(
             $this->criteria->gatingTagsByCriteria(),
             $this->evaluations->gatingAnswers($evaluationId)
