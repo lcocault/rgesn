@@ -68,22 +68,14 @@ final class McpController
         try {
             $result = $this->dispatchMethod($method, $params);
         } catch (InvalidArgumentException $e) {
-            if (!$hasId) {
-                http_response_code(204);
-                return;
-            }
             $message = $e->getMessage();
             $code = str_starts_with($message, 'Method not found') || str_starts_with($message, 'Unknown tool:')
                 ? -32601
                 : -32602;
-            $this->sendMcpError($id, $code, $message);
+            $this->sendMcpError($hasId ? $id : null, $code, $message);
             return;
         } catch (\Throwable $e) {
-            if (!$hasId) {
-                http_response_code(204);
-                return;
-            }
-            $this->sendMcpError($id, -32603, 'Internal error');
+            $this->sendMcpError($hasId ? $id : null, -32603, 'Internal error');
             return;
         }
 
@@ -176,7 +168,7 @@ final class McpController
                 $this->requiredInt($arguments, 'evaluation_id'),
                 $this->requiredString($arguments, 'criteria_code'),
                 $this->requiredString($arguments, 'status'),
-                trim((string) ($arguments['justification'] ?? ''))
+                $this->optionalString($arguments, 'justification')
             ),
             default => throw new InvalidArgumentException('Unknown tool: ' . $name),
         };
@@ -374,12 +366,28 @@ final class McpController
 
     private function requiredString(array $data, string $key): string
     {
-        $value = trim((string) ($data[$key] ?? ''));
+        if (!array_key_exists($key, $data) || !is_string($data[$key])) {
+            throw new InvalidArgumentException('Missing ' . $key);
+        }
+
+        $value = trim($data[$key]);
         if ($value === '') {
             throw new InvalidArgumentException('Missing ' . $key);
         }
 
         return $value;
+    }
+
+    private function optionalString(array $data, string $key): string
+    {
+        if (!array_key_exists($key, $data)) {
+            return '';
+        }
+        if (!is_string($data[$key])) {
+            throw new InvalidArgumentException('Missing or invalid ' . $key);
+        }
+
+        return trim($data[$key]);
     }
 
     private function optionalInt(array $data, string $key, int $default, bool $strictlyPositive): int
