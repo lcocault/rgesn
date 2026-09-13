@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rgesn\Controllers;
 
 use InvalidArgumentException;
+use JsonException;
 use Rgesn\Config;
 use Rgesn\Database;
 use Rgesn\Repositories\CriteriaRepository;
@@ -30,13 +31,13 @@ final class McpController
     public function handle(): void
     {
         if (!$this->isAuthorized()) {
-            $this->sendMcpError(null, -32001, 'Unauthorized');
+            $this->sendMcpError(null, -32001, 'Unauthorized', 401);
             return;
         }
 
         $payload = json_decode((string) file_get_contents('php://input'), true);
         if (!is_array($payload)) {
-            $this->sendMcpError(null, -32700, 'Invalid JSON');
+            $this->sendMcpError(null, -32700, 'Invalid JSON', 400);
             return;
         }
 
@@ -45,7 +46,7 @@ final class McpController
         $params = is_array($payload['params'] ?? null) ? $payload['params'] : [];
 
         if (!is_string($method) || $method === '') {
-            $this->sendMcpError($id, -32600, 'Invalid request');
+            $this->sendMcpError($id, -32600, 'Invalid request', 400);
             return;
         }
 
@@ -57,10 +58,10 @@ final class McpController
         try {
             $result = $this->dispatchMethod($method, $params);
         } catch (InvalidArgumentException $e) {
-            $this->sendMcpError($id, -32602, $e->getMessage());
+            $this->sendMcpError($id, -32602, $e->getMessage(), 400);
             return;
         } catch (\Throwable $e) {
-            $this->sendMcpError($id, -32603, 'Internal error');
+            $this->sendMcpError($id, -32603, 'Internal error', 500);
             return;
         }
 
@@ -142,10 +143,16 @@ final class McpController
             default => throw new InvalidArgumentException('Unknown tool: ' . $name),
         };
 
+        try {
+            $textContent = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            throw new InvalidArgumentException('Unable to encode tool response');
+        }
+
         return [
             'structuredContent' => $data,
             'content' => [
-                ['type' => 'text', 'text' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)],
+                ['type' => 'text', 'text' => $textContent],
             ],
         ];
     }
@@ -287,11 +294,20 @@ final class McpController
 
     private function requiredInt(array $data, string $key): int
     {
-        if (!array_key_exists($key, $data) || !is_numeric($data[$key])) {
+        if (!array_key_exists($key, $data)) {
             throw new InvalidArgumentException('Missing or invalid ' . $key);
         }
 
-        return (int) $data[$key];
+        $value = $data[$key];
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (!is_string($value) || preg_match('/^-?[0-9]+$/', $value) !== 1) {
+            throw new InvalidArgumentException('Missing or invalid ' . $key);
+        }
+
+        return (int) $value;
     }
 
     private function requiredString(array $data, string $key): string
@@ -333,8 +349,9 @@ final class McpController
         ], JSON_UNESCAPED_UNICODE);
     }
 
-    private function sendMcpError(mixed $id, int $code, string $message): void
+    private function sendMcpError(mixed $id, int $code, string $message, int $statusCode = 200): void
     {
+        http_response_code($statusCode);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode([
             'jsonrpc' => '2.0',
