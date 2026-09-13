@@ -50,7 +50,7 @@ final class McpController
             return;
         }
 
-        if ($method === 'notifications/initialized') {
+        if ($method === 'notifications/initialized' && $id === null) {
             http_response_code(204);
             return;
         }
@@ -300,14 +300,22 @@ final class McpController
 
         $value = $data[$key];
         if (is_int($value)) {
+            if ($value <= 0) {
+                throw new InvalidArgumentException('Missing or invalid ' . $key);
+            }
             return $value;
         }
 
-        if (!is_string($value) || preg_match('/^-?[0-9]+$/', $value) !== 1) {
+        if (!is_string($value) || preg_match('/^[0-9]+$/', $value) !== 1) {
             throw new InvalidArgumentException('Missing or invalid ' . $key);
         }
 
-        return (int) $value;
+        $intValue = (int) $value;
+        if ($intValue <= 0) {
+            throw new InvalidArgumentException('Missing or invalid ' . $key);
+        }
+
+        return $intValue;
     }
 
     private function requiredString(array $data, string $key): string
@@ -322,13 +330,13 @@ final class McpController
 
     private function isAuthorized(): bool
     {
-        if (!Auth::isRequired() || Auth::isLoggedIn()) {
+        if (Auth::isRequired() && Auth::isLoggedIn()) {
             return true;
         }
 
         $password = Config::accessPassword();
         if ($password === null || $password === '') {
-            return true;
+            return false;
         }
 
         $authorization = (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? '');
