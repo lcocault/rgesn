@@ -90,6 +90,19 @@ database/
 referentiel/        Documents officiels source (PDF du référentiel, exemple de déclaration)
 ```
 
+## Interface MCP
+
+Le site expose un endpoint MCP HTTP `POST /mcp` (JSON-RPC 2.0).
+
+- Authentification : appeler `POST /mcp` avec le header `Authorization` au schéma `Bearer` et la valeur de `APP_MCP_TOKEN`.
+- Si `APP_MCP_TOKEN` est absent, la route MCP n'est pas activée. Si le header Authorization est invalide, la route renvoie une erreur d'autorisation.
+- Méthodes MCP supportées : `initialize`, `tools/list`, `tools/call`.
+- Outils exposés :
+  - `list_projects`
+  - `list_project_evaluations` (inclut `is_in_progress`)
+  - `get_open_questions` (retourne les questions encore ouvertes d'une évaluation en cours, avec le contenu détaillé du critère, et supporte `limit` / `offset`)
+  - `submit_answer` (enregistre une réponse sur un critère d'une évaluation en cours)
+
 ## Mise à jour du référentiel
 
 Les 78 critères et leurs textes (objectif, mise en œuvre, moyen de test, conditions

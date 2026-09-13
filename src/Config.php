@@ -39,6 +39,12 @@ final class Config
         return $value === '' ? null : $value;
     }
 
+    public static function mcpToken(): ?string
+    {
+        $value = Env::get('APP_MCP_TOKEN', '');
+        return $value === '' ? null : $value;
+    }
+
     public static function dbDsn(): string
     {
         $host = Env::get('DB_HOST', '127.0.0.1');
