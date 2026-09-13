@@ -45,6 +45,10 @@ final class McpController
             $this->sendMcpError(null, -32600, 'Invalid request', 400);
             return;
         }
+        if (array_is_list($payload)) {
+            $this->sendMcpError(null, -32600, 'Batch requests are not supported', 400);
+            return;
+        }
 
         $hasId = array_key_exists('id', $payload);
         $id = $payload['id'] ?? null;
@@ -149,7 +153,7 @@ final class McpController
         $name = $params['name'] ?? null;
         $arguments = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
         if (!is_string($name) || $name === '') {
-            throw new InvalidArgumentException('Missing tool name');
+            throw new InvalidArgumentException('Missing or invalid tool name');
         }
 
         $data = match ($name) {

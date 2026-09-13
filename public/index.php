@@ -40,8 +40,10 @@ if (BASE_URL_PREFIX !== '' && str_starts_with($uri, BASE_URL_PREFIX)) {
     $uri = substr($uri, strlen(BASE_URL_PREFIX)) ?: '/';
 }
 
+$mcpEnabled = Config::accessPassword() !== null && Config::accessPassword() !== '';
+
 $publicRoutes = ['/login'];
-if (Config::accessPassword() !== null) {
+if ($mcpEnabled) {
     $publicRoutes[] = '/mcp';
 }
 $path = parse_url($uri, PHP_URL_PATH) ?: '/';
@@ -60,7 +62,7 @@ try {
     $router->get('/login', fn () => (new AuthController())->form());
     $router->post('/login', fn () => (new AuthController())->attempt());
     $router->post('/logout', fn () => (new AuthController())->logout());
-    if (Config::accessPassword() !== null) {
+    if ($mcpEnabled) {
         $router->post('/mcp', fn () => (new McpController())->handle());
     }
 
