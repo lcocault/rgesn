@@ -8,6 +8,7 @@ use Rgesn\Config;
 use Rgesn\Controllers\AuthController;
 use Rgesn\Controllers\DeclarationController;
 use Rgesn\Controllers\EvaluationController;
+use Rgesn\Controllers\McpController;
 use Rgesn\Controllers\ProjectController;
 use Rgesn\Router;
 use Rgesn\Support\Auth;
@@ -39,7 +40,7 @@ if (BASE_URL_PREFIX !== '' && str_starts_with($uri, BASE_URL_PREFIX)) {
     $uri = substr($uri, strlen(BASE_URL_PREFIX)) ?: '/';
 }
 
-$publicRoutes = ['/login'];
+$publicRoutes = ['/login', '/mcp'];
 $path = parse_url($uri, PHP_URL_PATH) ?: '/';
 
 if (Auth::isRequired() && !Auth::isLoggedIn() && !in_array($path, $publicRoutes, true)) {
@@ -56,6 +57,7 @@ try {
     $router->get('/login', fn () => (new AuthController())->form());
     $router->post('/login', fn () => (new AuthController())->attempt());
     $router->post('/logout', fn () => (new AuthController())->logout());
+    $router->post('/mcp', fn () => (new McpController())->handle());
 
     $router->get('/projects', fn () => (new ProjectController())->index());
     $router->post('/projects', fn () => (new ProjectController())->create());
