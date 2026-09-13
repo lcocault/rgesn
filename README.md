@@ -100,7 +100,7 @@ Le site expose un endpoint MCP HTTP `POST /mcp` (JSON-RPC 2.0).
 - Outils exposés :
   - `list_projects`
   - `list_project_evaluations` (inclut `is_in_progress`)
-  - `get_open_questions` (retourne les questions encore ouvertes d'une évaluation en cours, avec le contenu détaillé du critère)
+  - `get_open_questions` (retourne les questions encore ouvertes d'une évaluation en cours, avec le contenu détaillé du critère, et supporte `limit` / `offset`)
   - `submit_answer` (enregistre une réponse sur un critère d'une évaluation en cours)
 
 ## Mise à jour du référentiel

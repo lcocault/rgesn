@@ -38,11 +38,11 @@ final class McpController
 
         $payload = json_decode((string) file_get_contents('php://input'), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->sendMcpError(null, -32700, 'Invalid JSON');
+            $this->sendMcpError(null, -32700, 'Invalid JSON', 400);
             return;
         }
         if (!is_array($payload)) {
-            $this->sendMcpError(null, -32600, 'Invalid request');
+            $this->sendMcpError(null, -32600, 'Invalid request', 400);
             return;
         }
 
@@ -53,16 +53,7 @@ final class McpController
         $params = is_array($payload['params'] ?? null) ? $payload['params'] : [];
 
         if (!is_string($jsonRpcVersion) || $jsonRpcVersion !== '2.0' || !is_string($method) || $method === '') {
-            if (!$hasId) {
-                http_response_code(204);
-                return;
-            }
-            $this->sendMcpError($id, -32600, 'Invalid request');
-            return;
-        }
-
-        if (!$hasId && $method === 'notifications/initialized') {
-            http_response_code(204);
+            $this->sendMcpError(null, -32600, 'Invalid request', 400);
             return;
         }
 
@@ -121,7 +112,11 @@ final class McpController
                         'inputSchema' => [
                             'type' => 'object',
                             'required' => ['evaluation_id'],
-                            'properties' => ['evaluation_id' => ['type' => 'integer']],
+                            'properties' => [
+                                'evaluation_id' => ['type' => 'integer'],
+                                'limit' => ['type' => 'integer'],
+                                'offset' => ['type' => 'integer'],
+                            ],
                         ],
                     ],
                     [
@@ -156,7 +151,11 @@ final class McpController
         $data = match ($name) {
             'list_projects' => ['projects' => $this->listProjects()],
             'list_project_evaluations' => ['evaluations' => $this->listProjectEvaluations($this->requiredInt($arguments, 'project_id'))],
-            'get_open_questions' => $this->getOpenQuestions($this->requiredInt($arguments, 'evaluation_id')),
+            'get_open_questions' => $this->getOpenQuestions(
+                $this->requiredInt($arguments, 'evaluation_id'),
+                $this->optionalInt($arguments, 'limit', 100, true),
+                $this->optionalInt($arguments, 'offset', 0, false)
+            ),
             'submit_answer' => $this->submitAnswer(
                 $this->requiredInt($arguments, 'evaluation_id'),
                 $this->requiredString($arguments, 'criteria_code'),
@@ -222,7 +221,7 @@ final class McpController
         }, $this->evaluations->forProject($projectId));
     }
 
-    private function getOpenQuestions(int $evaluationId): array
+    private function getOpenQuestions(int $evaluationId, int $limit, int $offset): array
     {
         $evaluation = $this->evaluations->find($evaluationId);
         if ($evaluation === null) {
@@ -268,10 +267,15 @@ final class McpController
             ];
         }
 
+        $total = count($openQuestions);
+
         return [
             'evaluation_id' => $evaluationId,
             'status' => (string) $evaluation['status'],
-            'open_questions' => $openQuestions,
+            'total_open_questions' => $total,
+            'limit' => $limit,
+            'offset' => $offset,
+            'open_questions' => array_values(array_slice($openQuestions, $offset, $limit)),
         ];
     }
 
@@ -353,6 +357,31 @@ final class McpController
         return $value;
     }
 
+    private function optionalInt(array $data, string $key, int $default, bool $strictlyPositive): int
+    {
+        if (!array_key_exists($key, $data)) {
+            return $default;
+        }
+
+        $value = $data[$key];
+        if (is_int($value)) {
+            $intValue = $value;
+        } elseif (is_string($value) && preg_match('/^[0-9]+$/', $value) === 1) {
+            $intValue = (int) $value;
+        } else {
+            throw new InvalidArgumentException('Missing or invalid ' . $key);
+        }
+
+        if ($strictlyPositive && $intValue <= 0) {
+            throw new InvalidArgumentException('Missing or invalid ' . $key);
+        }
+        if (!$strictlyPositive && $intValue < 0) {
+            throw new InvalidArgumentException('Missing or invalid ' . $key);
+        }
+
+        return $intValue;
+    }
+
     private function isAuthorized(): bool
     {
         $password = Config::accessPassword();
@@ -378,8 +407,9 @@ final class McpController
         ], JSON_UNESCAPED_UNICODE);
     }
 
-    private function sendMcpError(mixed $id, int $code, string $message): void
+    private function sendMcpError(mixed $id, int $code, string $message, int $statusCode = 200): void
     {
+        http_response_code($statusCode);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode([
             'jsonrpc' => '2.0',
