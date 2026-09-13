@@ -56,11 +56,19 @@ final class McpController
         $hasParams = array_key_exists('params', $payload);
         $params = $payload['params'] ?? [];
         if ($hasParams && !is_array($params)) {
+            if (!$hasId) {
+                http_response_code(204);
+                return;
+            }
             $this->sendMcpError($hasId ? $id : null, -32600, 'Invalid request', 400);
             return;
         }
 
         if (!is_string($jsonRpcVersion) || $jsonRpcVersion !== '2.0' || !is_string($method) || $method === '') {
+            if (!$hasId) {
+                http_response_code(204);
+                return;
+            }
             $this->sendMcpError($hasId ? $id : null, -32600, 'Invalid request', 400);
             return;
         }
