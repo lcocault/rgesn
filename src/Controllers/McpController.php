@@ -316,15 +316,8 @@ final class McpController
             throw new InvalidArgumentException('Criterion already answered');
         }
 
-        $applicability = new ApplicabilityService(
-            $this->criteria->gatingTagsByCriteria(),
-            $this->evaluations->gatingAnswers($evaluationId)
-        );
-        if (!$applicability->isDecidable($criteriaCode)) {
-            throw new InvalidArgumentException('Criterion gating questions are not all answered');
-        }
-        if ($applicability->isAutoNotApplicable($criteriaCode)) {
-            throw new InvalidArgumentException('Criterion is automatically non_applicable');
+        if (!$this->isOpenQuestion($evaluationId, $criteriaCode)) {
+            throw new InvalidArgumentException('Criterion is not currently open');
         }
 
         $this->evaluations->saveAnswer($evaluationId, $criteriaCode, $status, $justification);
@@ -433,6 +426,26 @@ final class McpController
         }
 
         return false;
+    }
+
+    private function isOpenQuestion(int $evaluationId, string $criteriaCode): bool
+    {
+        $criterion = $this->criteria->find($criteriaCode);
+        if ($criterion === null) {
+            return false;
+        }
+
+        $answers = $this->evaluations->answers($evaluationId);
+        if (isset($answers[$criteriaCode])) {
+            return false;
+        }
+
+        $applicability = new ApplicabilityService(
+            $this->criteria->gatingTagsByCriteria(),
+            $this->evaluations->gatingAnswers($evaluationId)
+        );
+
+        return $applicability->isDecidable($criteriaCode) && !$applicability->isAutoNotApplicable($criteriaCode);
     }
 
     private function sendMcpResult(mixed $id, array $result): void
