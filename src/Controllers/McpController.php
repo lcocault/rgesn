@@ -6,6 +6,7 @@ namespace Rgesn\Controllers;
 
 use InvalidArgumentException;
 use JsonException;
+use RuntimeException;
 use Rgesn\Config;
 use Rgesn\Database;
 use Rgesn\Repositories\CriteriaRepository;
@@ -30,6 +31,7 @@ final class McpController
     public function handle(): void
     {
         if (!$this->isAuthorized()) {
+            http_response_code(401);
             $this->sendMcpError(null, -32001, 'Unauthorized');
             return;
         }
@@ -46,10 +48,11 @@ final class McpController
 
         $hasId = array_key_exists('id', $payload);
         $id = $payload['id'] ?? null;
+        $jsonRpcVersion = $payload['jsonrpc'] ?? null;
         $method = $payload['method'] ?? null;
         $params = is_array($payload['params'] ?? null) ? $payload['params'] : [];
 
-        if (!is_string($method) || $method === '') {
+        if (!is_string($jsonRpcVersion) || $jsonRpcVersion !== '2.0' || !is_string($method) || $method === '') {
             if (!$hasId) {
                 http_response_code(204);
                 return;
@@ -166,7 +169,7 @@ final class McpController
         try {
             $textContent = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
         } catch (JsonException) {
-            throw new InvalidArgumentException('Unable to encode tool response');
+            throw new RuntimeException('Unable to encode tool response');
         }
 
         return [
@@ -188,7 +191,9 @@ final class McpController
                 'name' => (string) $project['name'],
                 'description' => (string) $project['description'],
                 'evaluations_count' => (int) ($project['evaluations_count'] ?? 0),
-                'last_score' => $project['last_score'] !== null ? (float) $project['last_score'] : null,
+                'last_score' => array_key_exists('last_score', $project) && $project['last_score'] !== null
+                    ? (float) $project['last_score']
+                    : null,
             ];
         }, $this->projects->all());
     }

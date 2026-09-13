@@ -95,6 +95,7 @@ referentiel/        Documents officiels source (PDF du référentiel, exemple de
 Le site expose un endpoint MCP HTTP `POST /mcp` (JSON-RPC 2.0).
 
 - Authentification : l'interface MCP n'est disponible que si `APP_ACCESS_PASSWORD` est défini, puis en envoyant un header Authorization de type ****** cette valeur.
+- Si `APP_ACCESS_PASSWORD` est absent (ou si le header est invalide), `POST /mcp` renvoie une erreur d'autorisation.
 - Méthodes MCP supportées : `initialize`, `tools/list`, `tools/call`.
 - Outils exposés :
   - `list_projects`
