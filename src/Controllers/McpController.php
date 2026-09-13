@@ -53,7 +53,12 @@ final class McpController
         $id = $payload['id'] ?? null;
         $jsonRpcVersion = $payload['jsonrpc'] ?? null;
         $method = $payload['method'] ?? null;
-        $params = is_array($payload['params'] ?? null) ? $payload['params'] : [];
+        $hasParams = array_key_exists('params', $payload);
+        $params = $payload['params'] ?? [];
+        if ($hasParams && !is_array($params)) {
+            $this->sendMcpError($hasId ? $id : null, -32600, 'Invalid request', 400);
+            return;
+        }
 
         if (!is_string($jsonRpcVersion) || $jsonRpcVersion !== '2.0' || !is_string($method) || $method === '') {
             $this->sendMcpError($hasId ? $id : null, -32600, 'Invalid request', 400);
@@ -405,7 +410,12 @@ final class McpController
             return false;
         }
 
-        $authorization = (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? '');
+        $authorization = (string) (
+            $_SERVER['HTTP_AUTHORIZATION']
+            ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+            ?? $this->authorizationHeaderFromGetAllHeaders()
+            ?? ''
+        );
         if (preg_match('/^Bearer\s+(.+)$/i', $authorization, $matches) === 1) {
             return hash_equals($password, trim($matches[1]));
         }
@@ -416,21 +426,51 @@ final class McpController
     private function sendMcpResult(mixed $id, array $result): void
     {
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode([
-            'jsonrpc' => '2.0',
-            'id' => $id,
-            'result' => $result,
-        ], JSON_UNESCAPED_UNICODE);
+        try {
+            echo json_encode([
+                'jsonrpc' => '2.0',
+                'id' => $id,
+                'result' => $result,
+            ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            http_response_code(500);
+            echo '{"jsonrpc":"2.0","id":null,"error":{"code":-32603,"message":"Internal error"}}';
+        }
     }
 
     private function sendMcpError(mixed $id, int $code, string $message, int $statusCode = 200): void
     {
         http_response_code($statusCode);
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode([
-            'jsonrpc' => '2.0',
-            'id' => $id,
-            'error' => ['code' => $code, 'message' => $message],
-        ], JSON_UNESCAPED_UNICODE);
+        try {
+            echo json_encode([
+                'jsonrpc' => '2.0',
+                'id' => $id,
+                'error' => ['code' => $code, 'message' => $message],
+            ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            http_response_code(500);
+            echo '{"jsonrpc":"2.0","id":null,"error":{"code":-32603,"message":"Internal error"}}';
+        }
+    }
+
+    private function authorizationHeaderFromGetAllHeaders(): ?string
+    {
+        if (!function_exists('getallheaders')) {
+            return null;
+        }
+
+        $headers = getallheaders();
+        if (!is_array($headers)) {
+            return null;
+        }
+
+        foreach ($headers as $name => $value) {
+            if (is_string($name) && is_string($value) && strtolower($name) === 'authorization') {
+                return $value;
+            }
+        }
+
+        return null;
     }
 }
