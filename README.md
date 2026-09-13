@@ -94,8 +94,8 @@ referentiel/        Documents officiels source (PDF du référentiel, exemple de
 
 Le site expose un endpoint MCP HTTP `POST /mcp` (JSON-RPC 2.0).
 
-- Authentification : appeler `POST /mcp` avec le header `Authorization` au schéma `Bearer` et la valeur de `APP_ACCESS_PASSWORD`.
-- Si `APP_ACCESS_PASSWORD` est absent, la route MCP n'est pas activée. Si le header Authorization est invalide, la route renvoie une erreur d'autorisation.
+- Authentification : appeler `POST /mcp` avec le header `Authorization` au schéma `Bearer` et la valeur de `APP_MCP_TOKEN`.
+- Si `APP_MCP_TOKEN` est absent, la route MCP n'est pas activée. Si le header Authorization est invalide, la route renvoie une erreur d'autorisation.
 - Méthodes MCP supportées : `initialize`, `tools/list`, `tools/call`.
 - Outils exposés :
   - `list_projects`

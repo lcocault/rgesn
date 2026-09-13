@@ -40,7 +40,7 @@ if (BASE_URL_PREFIX !== '' && str_starts_with($uri, BASE_URL_PREFIX)) {
     $uri = substr($uri, strlen(BASE_URL_PREFIX)) ?: '/';
 }
 
-$mcpEnabled = Config::accessPassword() !== null && Config::accessPassword() !== '';
+$mcpEnabled = Config::mcpToken() !== null && Config::mcpToken() !== '';
 
 $publicRoutes = ['/login'];
 if ($mcpEnabled) {

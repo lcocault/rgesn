@@ -417,8 +417,8 @@ final class McpController
 
     private function isAuthorized(): bool
     {
-        $password = Config::accessPassword();
-        if ($password === null || $password === '') {
+        $token = Config::mcpToken();
+        if ($token === null || $token === '') {
             return false;
         }
 
@@ -429,7 +429,7 @@ final class McpController
             ?? ''
         );
         if (preg_match('/^Bearer\s+(.+)$/i', $authorization, $matches) === 1) {
-            return hash_equals($password, trim($matches[1]));
+            return hash_equals($token, trim($matches[1]));
         }
 
         return false;
