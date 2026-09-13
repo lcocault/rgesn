@@ -32,7 +32,6 @@ final class McpController
     {
         if (!$this->isAuthorized()) {
             http_response_code(401);
-            $this->sendMcpError(null, -32001, 'Unauthorized');
             return;
         }
 
@@ -247,6 +246,7 @@ final class McpController
         );
 
         $openQuestions = [];
+        $total = 0;
         foreach ($allCriteria as $criterion) {
             $code = (string) $criterion['code'];
             if (isset($answers[$code])) {
@@ -256,6 +256,11 @@ final class McpController
                 continue;
             }
             if ($applicability->isAutoNotApplicable($code)) {
+                continue;
+            }
+
+            $total++;
+            if ($total <= $offset || count($openQuestions) >= $limit) {
                 continue;
             }
 
@@ -275,15 +280,13 @@ final class McpController
             ];
         }
 
-        $total = count($openQuestions);
-
         return [
             'evaluation_id' => $evaluationId,
             'status' => (string) $evaluation['status'],
             'total_open_questions' => $total,
             'limit' => $limit,
             'offset' => $offset,
-            'open_questions' => array_values(array_slice($openQuestions, $offset, $limit)),
+            'open_questions' => $openQuestions,
         ];
     }
 
