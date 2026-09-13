@@ -53,7 +53,7 @@ final class McpController
         $params = is_array($payload['params'] ?? null) ? $payload['params'] : [];
 
         if (!is_string($jsonRpcVersion) || $jsonRpcVersion !== '2.0' || !is_string($method) || $method === '') {
-            $this->sendMcpError(null, -32600, 'Invalid request', 400);
+            $this->sendMcpError($hasId ? $id : null, -32600, 'Invalid request', 400);
             return;
         }
 
@@ -64,7 +64,11 @@ final class McpController
                 http_response_code(204);
                 return;
             }
-            $this->sendMcpError($id, -32602, $e->getMessage());
+            $message = $e->getMessage();
+            $code = str_starts_with($message, 'Method not found') || str_starts_with($message, 'Unknown tool:')
+                ? -32601
+                : -32602;
+            $this->sendMcpError($id, $code, $message);
             return;
         } catch (\Throwable $e) {
             if (!$hasId) {
