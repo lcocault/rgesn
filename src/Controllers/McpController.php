@@ -137,6 +137,20 @@ final class McpController
                             ],
                         ],
                     ],
+                    [
+                        'name' => 'update_answer',
+                        'description' => 'Modifie une réponse existante de critère sur une évaluation en cours.',
+                        'inputSchema' => [
+                            'type' => 'object',
+                            'required' => ['evaluation_id', 'criteria_code', 'status'],
+                            'properties' => [
+                                'evaluation_id' => ['type' => 'integer'],
+                                'criteria_code' => ['type' => 'string'],
+                                'status' => ['type' => 'string', 'enum' => ['valide', 'non_valide', 'non_applicable', 'non_renseigne']],
+                                'justification' => ['type' => 'string'],
+                            ],
+                        ],
+                    ],
                 ],
             ],
             'tools/call' => $this->dispatchToolCall($params),
@@ -165,6 +179,12 @@ final class McpController
                 $this->optionalInt($arguments, 'offset', 0, false)
             ),
             'submit_answer' => $this->submitAnswer(
+                $this->requiredInt($arguments, 'evaluation_id'),
+                $this->requiredString($arguments, 'criteria_code'),
+                $this->requiredString($arguments, 'status'),
+                $this->optionalString($arguments, 'justification')
+            ),
+            'update_answer' => $this->updateAnswer(
                 $this->requiredInt($arguments, 'evaluation_id'),
                 $this->requiredString($arguments, 'criteria_code'),
                 $this->requiredString($arguments, 'status'),
@@ -328,6 +348,43 @@ final class McpController
             'status' => $status,
             'justification' => $justification,
             'saved' => true,
+        ];
+    }
+
+    private function updateAnswer(int $evaluationId, string $criteriaCode, string $status, string $justification): array
+    {
+        $evaluation = $this->evaluations->find($evaluationId);
+        if ($evaluation === null) {
+            throw new InvalidArgumentException('Unknown evaluation_id: ' . $evaluationId);
+        }
+        if ($evaluation['status'] !== 'in_progress') {
+            throw new InvalidArgumentException('Evaluation is not in_progress');
+        }
+
+        $criterion = $this->criteria->find($criteriaCode);
+        if ($criterion === null) {
+            throw new InvalidArgumentException('Unknown criteria_code: ' . $criteriaCode);
+        }
+
+        $allowed = ['valide', 'non_valide', 'non_applicable', 'non_renseigne'];
+        if (!in_array($status, $allowed, true)) {
+            throw new InvalidArgumentException('Invalid status (allowed: valide, non_valide, non_applicable, non_renseigne)');
+        }
+
+        $answers = $this->evaluations->answers($evaluationId);
+        if (!isset($answers[$criteriaCode])) {
+            throw new InvalidArgumentException('Criterion is not answered yet');
+        }
+
+        $this->evaluations->saveAnswer($evaluationId, $criteriaCode, $status, $justification);
+
+        return [
+            'evaluation_id' => $evaluationId,
+            'criteria_code' => $criteriaCode,
+            'status' => $status,
+            'justification' => $justification,
+            'saved' => true,
+            'updated' => true,
         ];
     }
 
