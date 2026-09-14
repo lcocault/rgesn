@@ -351,8 +351,10 @@ final class McpController
         ];
     }
 
-    private function updateAnswer(int $evaluationId, string $criteriaCode, string $status, string $justification): array
+    private function updateAnswer(int $evaluationId, string $criteriaCode, string $status, ?string $justification = ''): array
     {
+        $justification ??= '';
+
         $evaluation = $this->evaluations->find($evaluationId);
         if ($evaluation === null) {
             throw new InvalidArgumentException('Unknown evaluation_id: ' . $evaluationId);
